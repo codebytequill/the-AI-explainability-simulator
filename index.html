@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Explainability Simulator</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50; /* Dark Blue/Gray */
+            --secondary-color: #3498db; /* Bright Blue */
+            --light-gray: #f2f3f4;
+            --white: #ffffff;
+            --text-color: #34495e;
+            --pass-color: #27ae60;
+            --fail-color: #c0392b;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            background-color: var(--light-gray);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        header h1 {
+            color: var(--primary-color);
+            margin: 0;
+        }
+
+        header p {
+            font-size: 1.1em;
+            max-width: 650px;
+            margin: 10px auto;
+        }
+
+        .simulator {
+            background-color: var(--white);
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .applicant-selection, .applicant-details {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .applicant-selection button {
+            padding: 10px 20px;
+            font-size: 1em;
+            margin: 5px;
+            cursor: pointer;
+            border: 2px solid var(--secondary-color);
+            background-color: var(--white);
+            color: var(--secondary-color);
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .applicant-selection button.active, .applicant-selection button:hover {
+            background-color: var(--secondary-color);
+            color: var(--white);
+        }
+
+        #applicant-info {
+            font-size: 1.1em;
+            font-weight: 500;
+            background-color: #eaf5fb;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 5px solid var(--secondary-color);
+        }
+        
+        .ai-controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .ai-controls button {
+             padding: 15px 30px;
+             font-size: 1.1em;
+             font-weight: 700;
+             border-radius: 5px;
+             cursor: pointer;
+             border: none;
+             color: var(--white);
+             transition: transform 0.2s ease;
+        }
+        .ai-controls button:hover {
+            transform: translateY(-2px);
+        }
+        
+        #run-black-box { background-color: var(--primary-color); }
+        #run-transparent { background-color: var(--secondary-color); }
+        
+        .outputs-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .output-box {
+            padding: 20px;
+            border-radius: 8px;
+            min-height: 200px;
+        }
+
+        .output-box h3 {
+            margin-top: 0;
+            text-align: center;
+        }
+
+        /* Black Box Styling */
+        #black-box-output {
+            background-color: var(--primary-color);
+            color: var(--white);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        
+        #black-box-result {
+            font-size: 2.5em;
+            font-weight: bold;
+        }
+
+        /* Transparent Box Styling */
+        #transparent-output {
+            background-color: #f8f9f9;
+            border: 1px solid #bdc3c7;
+        }
+
+        #transparent-result-decision {
+            font-size: 1.5em;
+            font-weight: bold;
+            text-align: center;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        #transparent-reasons ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        #transparent-reasons li {
+            padding: 8px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .pass { color: var(--pass-color); border-left: 3px solid var(--pass-color); background: #eafaf1; }
+        .fail { color: var(--fail-color); border-left: 3px solid var(--fail-color); background: #fdedec; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>AI Explainability Simulator</h1>
+            <p>Comparing a "Black Box" AI that gives an answer with no reasons, to a "Transparent AI" that explains its decision-making process.</p>
+        </header>
+
+        <div class="simulator">
+            <div class="applicant-selection">
+                <h3>1. Select a Sample Loan Applicant</h3>
+                <button class="applicant-btn" data-id="0">Applicant A</button>
+                <button class="applicant-btn" data-id="1">Applicant B</button>
+                <button class="applicant-btn" data-id="2">Applicant C</button>
+            </div>
+
+            <div class="applicant-details">
+                <div id="applicant-info">Select an applicant to see their details.</div>
+            </div>
+            
+            <div class="ai-controls">
+                 <button id="run-black-box" disabled>2a. Run Black Box AI</button>
+                 <button id="run-transparent" disabled>2b. Run Transparent AI</button>
+            </div>
+
+            <div class="outputs-container">
+                <div class="output-box" id="black-box-output">
+                     <h3>Black Box Result</h3>
+                     <div id="black-box-result">...</div>
+                </div>
+                <div class="output-box" id="transparent-output">
+                    <h3>Transparent Result</h3>
+                    <div id="transparent-result-decision">...</div>
+                    <div id="transparent-reasons"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // --- DATA ---
+    const applicants = [
+        { id: 0, name: 'Applicant A', creditScore: 780, income: 95000, dti: 25, details: "Credit: 780, Income: $95k, Debt-to-Income: 25%" },
+        { id: 1, name: 'Applicant B', creditScore: 640, income: 80000, dti: 48, details: "Credit: 640, Income: $80k, Debt-to-Income: 48%" },
+        { id: 2, name: 'Applicant C', creditScore: 710, income: 60000, dti: 35, details: "Credit: 710, Income: $60k, Debt-to-Income: 35%" }
+    ];
+    let currentApplicant = null;
+
+    // --- ELEMENTS ---
+    const applicantButtons = document.querySelectorAll('.applicant-btn');
+    const applicantInfo = document.getElementById('applicant-info');
+    const runBlackBoxBtn = document.getElementById('run-black-box');
+    const runTransparentBtn = document.getElementById('run-transparent');
+    const blackBoxResult = document.getElementById('black-box-result');
+    const transparentResultDecision = document.getElementById('transparent-result-decision');
+    const transparentReasons = document.getElementById('transparent-reasons');
+
+    // --- LOGIC ---
+    function selectApplicant(id) {
+        currentApplicant = applicants.find(a => a.id === parseInt(id));
+        
+        // Update UI
+        applicantInfo.textContent = currentApplicant.details;
+        runBlackBoxBtn.disabled = false;
+        runTransparentBtn.disabled = false;
+
+        // Reset outputs
+        blackBoxResult.textContent = "...";
+        transparentResultDecision.textContent = "...";
+        transparentReasons.innerHTML = "";
+
+        // Update active button style
+        applicantButtons.forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.id === id);
+        });
+    }
+
+    function runLoanAI(applicant) {
+        const reasons = [];
+        let decision = 'Approved';
+
+        // Rule 1: Credit Score
+        if (applicant.creditScore >= 680) {
+            reasons.push({ text: 'Credit Score ≥ 680', pass: true });
+        } else {
+            reasons.push({ text: 'Credit Score < 680', pass: false });
+            decision = 'Denied';
+        }
+
+        // Rule 2: Income
+        if (applicant.income >= 65000) {
+            reasons.push({ text: 'Annual Income ≥ $65k', pass: true });
+        } else {
+            reasons.push({ text: 'Annual Income < $65k', pass: false });
+            decision = 'Denied';
+        }
+
+        // Rule 3: Debt-to-Income Ratio
+        if (applicant.dti <= 40) {
+            reasons.push({ text: 'Debt-to-Income ≤ 40%', pass: true });
+        } else {
+            reasons.push({ text: 'Debt-to-Income > 40%', pass: false });
+            decision = 'Denied';
+        }
+        
+        // Final check if any rule failed
+        if (reasons.some(r => !r.pass)) {
+            decision = 'Denied';
+        }
+
+        return { decision, reasons };
+    }
+
+    // --- EVENT LISTENERS ---
+    applicantButtons.forEach(button => {
+        button.addEventListener('click', (e) => {
+            selectApplicant(e.target.dataset.id);
+        });
+    });
+
+    runBlackBoxBtn.addEventListener('click', () => {
+        if (!currentApplicant) return;
+        const { decision } = runLoanAI(currentApplicant);
+        blackBoxResult.textContent = decision;
+        blackBoxResult.style.color = decision === 'Approved' ? 'var(--pass-color)' : 'var(--fail-color)';
+    });
+
+    runTransparentBtn.addEventListener('click', () => {
+        if (!currentApplicant) return;
+        const { decision, reasons } = runLoanAI(currentApplicant);
+        
+        transparentResultDecision.textContent = decision;
+        transparentResultDecision.style.color = decision === 'Approved' ? 'var(--pass-color)' : 'var(--fail-color)';
+        
+        let reasonsHTML = '<ul>';
+        reasons.forEach(reason => {
+            const resultClass = reason.pass ? 'pass' : 'fail';
+            const icon = reason.pass ? '✔' : '✖';
+            reasonsHTML += `<li class="${resultClass}">${reason.text} <span>${icon}</span></li>`;
+        });
+        reasonsHTML += '</ul>';
+        transparentReasons.innerHTML = reasonsHTML;
+    });
+});
+</script>
+</body>
+</html>
